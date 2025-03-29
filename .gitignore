@@ -1,0 +1,6 @@
+# Ignore the virtual environment directory
+venv/
+
+# Ignore environment variable files
+.env
+.DS_Store
