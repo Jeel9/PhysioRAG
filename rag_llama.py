@@ -1,6 +1,10 @@
 import streamlit as st
 import os
+import io
 import PyPDF2
+import fitz  # PyMuPDF
+import pytesseract
+from PIL import Image
 from langchain_groq import ChatGroq
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.embeddings import HuggingFaceBgeEmbeddings
@@ -66,24 +70,78 @@ def vector_embedding():
 
         # ------------------------ Reading PDF files for context -----------------------
 
-        # Define the directory containing PDF files
+        # # Define the directory containing PDF files
+        # pdf_files_directory = "./pdf_files"  # Update to point to your target folder
+        # pdf_documents = []
+
+        # # Recursively traverse the directory to find all PDF files
+        # for root, _, files in os.walk(pdf_files_directory):
+        #     for file in files:
+        #         if file.endswith(".pdf"):
+        #             file_path = os.path.join(root, file)
+        #             with open(file_path, "rb") as f:
+        #                 reader = PyPDF2.PdfReader(f)
+        #                 content = ""
+        #                 for page in range(len(reader.pages)):
+        #                     content += reader.pages[page].extract_text()
+        #                 pdf_documents.append(Document(page_content=content, metadata={"source": file_path}))
+
+
         pdf_files_directory = "./pdf_files"  # Update to point to your target folder
         pdf_documents = []
+
+        def extract_text_from_pdf(pdf_path):
+            """Extracts text from PDF pages using PyPDF2 and OCR for scanned PDFs."""
+            with open(pdf_path, "rb") as f:
+                reader = PyPDF2.PdfReader(f)
+                content = ""
+
+                for page_num in range(len(reader.pages)):
+                    page = reader.pages[page_num]
+                    text = page.extract_text()
+
+                    if text and text.strip():
+                        content += text  # If normal text extraction works, use it
+                    else:
+                        # If page is image-based, use OCR
+                        ocr_text = extract_text_with_ocr(pdf_path, page_num)
+                        content += ocr_text
+
+            return content
+
+        def extract_text_with_ocr(pdf_path, page_num):
+            """Extracts text from an image-based PDF page using OCR (Tesseract)."""
+            doc = fitz.open(pdf_path)  # Open with PyMuPDF
+            page = doc[page_num]
+            images = page.get_images(full=True)
+
+            ocr_text = ""
+            for img_index, img in enumerate(images):
+                xref = img[0]
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+
+                # Convert to PIL image for OCR
+                image = Image.open(io.BytesIO(image_bytes))
+                ocr_text += pytesseract.image_to_string(image)
+
+            return ocr_text
 
         # Recursively traverse the directory to find all PDF files
         for root, _, files in os.walk(pdf_files_directory):
             for file in files:
                 if file.endswith(".pdf"):
                     file_path = os.path.join(root, file)
-                    with open(file_path, "rb") as f:
-                        reader = PyPDF2.PdfReader(f)
-                        content = ""
-                        for page in range(len(reader.pages)):
-                            content += reader.pages[page].extract_text()
-                        pdf_documents.append({"page_content": content, "metadata": {"source": file_path}})
+                    extracted_content = extract_text_from_pdf(file_path)
+
+                    if extracted_content.strip():  # Ensure non-empty content
+                        pdf_documents.append(Document(page_content=extracted_content, metadata={"source": file_path}))
+
 
         #converting name from pdf_docs -> java_docs
         java_documents = pdf_documents
+        print("Length of vector = ", len(java_documents))
+        print(java_documents)
 
         # Check if any Java files were found
         if not java_documents:

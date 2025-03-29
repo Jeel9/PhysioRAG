@@ -4,6 +4,8 @@ python-dotenv
 streamlit
 langchain_community
 langserve
+fitz
+pytesseract
 # fastapi
 # uvicorn
 # sse_starlette
