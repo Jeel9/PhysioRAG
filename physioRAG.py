@@ -2,7 +2,8 @@ import streamlit as st
 import os
 import io
 import PyPDF2
-import fitz  # PyMuPDF
+from pymupdf import fitz  # PyMuPDF
+from frontend import *
 import pytesseract
 import pickle
 from PIL import Image

@@ -4,8 +4,10 @@ python-dotenv
 streamlit
 langchain_community
 langserve
+pymupdf
 fitz
 pytesseract
+frontend
 # fastapi
 # uvicorn
 # sse_starlette
