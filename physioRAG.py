@@ -2,8 +2,6 @@ import streamlit as st
 import os
 import io
 import PyPDF2
-from pymupdf import fitz  # PyMuPDF
-from frontend import *
 import pytesseract
 import pickle
 from PIL import Image
@@ -72,17 +70,19 @@ def vector_embedding():
         return content
 
     def extract_text_with_ocr(pdf_path, page_num):
-        doc = fitz.open(pdf_path)
-        page = doc[page_num]
-        images = page.get_images(full=True)
-        ocr_text = ""
-        for img_index, img in enumerate(images):
-            xref = img[0]
-            base_image = doc.extract_image(xref)
-            image_bytes = base_image["image"]
-            image = Image.open(io.BytesIO(image_bytes))
-            ocr_text += pytesseract.image_to_string(image)
-        return ocr_text
+        with open(pdf_path, "rb") as f:
+            reader = PyPDF2.PdfReader(f)
+            doc = reader.pages
+            page = doc[page_num]
+            images = page.get_images(full=True)
+            ocr_text = ""
+            for img_index, img in enumerate(images):
+                xref = img[0]
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+                image = Image.open(io.BytesIO(image_bytes))
+                ocr_text += pytesseract.image_to_string(image)
+            return ocr_text
 
     for root, _, files in os.walk(pdf_files_directory):
         for file in files:
