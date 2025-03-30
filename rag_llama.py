@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import io
 import PyPDF2
+import fitz
 import pytesseract
 from PIL import Image
 from langchain_groq import ChatGroq
@@ -110,23 +111,21 @@ def vector_embedding():
 
         def extract_text_with_ocr(pdf_path, page_num):
             """Extracts text from an image-based PDF page using OCR (Tesseract)."""
-            with open(pdf_path, "rb") as f:
-                reader = PyPDF2.PdfReader(f)
-                doc = reader.pages
-                page = doc[page_num]
-                images = page.get_images(full=True)
+            doc = fitz.open(pdf_path)
+            page = doc[page_num]
+            images = page.get_images(full=True)
 
-                ocr_text = ""
-                for img_index, img in enumerate(images):
-                    xref = img[0]
-                    base_image = doc.extract_image(xref)
-                    image_bytes = base_image["image"]
+            ocr_text = ""
+            for img_index, img in enumerate(images):
+                xref = img[0]
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
 
-                    # Convert to PIL image for OCR
-                    image = Image.open(io.BytesIO(image_bytes))
-                    ocr_text += pytesseract.image_to_string(image)
+                # Convert to PIL image for OCR
+                image = Image.open(io.BytesIO(image_bytes))
+                ocr_text += pytesseract.image_to_string(image)
 
-                return ocr_text
+            return ocr_text
 
         # Recursively traverse the directory to find all PDF files
         for root, _, files in os.walk(pdf_files_directory):
@@ -142,7 +141,7 @@ def vector_embedding():
         #converting name from pdf_docs -> java_docs
         java_documents = pdf_documents
         print("Length of vector = ", len(java_documents))
-        print(java_documents)
+        # print(java_documents)
 
         # Check if any Java files were found
         if not java_documents:
