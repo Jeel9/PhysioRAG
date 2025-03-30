@@ -4,6 +4,7 @@ python-dotenv
 streamlit
 langchain_community
 langserve
+pymupdf
 pytesseract
 # fastapi
 # uvicorn
